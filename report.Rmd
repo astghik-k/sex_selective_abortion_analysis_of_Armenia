@@ -1,0 +1,269 @@
+---
+title: "Sex- Selective Abortion"
+author: "Astghik Kostanyan, Anna Misakyan, Anahit Navoyan"
+date: 'December 11, 2022'
+output:
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(error=T, warning=F, message=F, echo=F)
+
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(plotly)
+library(ggthemes)
+library(viridis)  
+library(RColorBrewer)
+library(data.table)
+library(summarytools)
+library(parameters)
+library(DT)
+library(descriptr)
+library(dashboardthemes)
+library(rgdal)
+library(ggplot2)
+library(dplyr)
+library(sf)
+library(raster)
+library(ggpubr)
+library(maps)
+library(rnaturalearth)
+library(rgeos)
+library(ggmap)
+```
+
+
+\newpage
+
+## Overview
+
+The demographics of Armenia are concerning, considering that most of the 3 million population is located in the capital, while for the development of a country, the different regions should develop relatively uniformly. Clearly, the vast underpopulated areas of Armenia prevent the country from developing to its potential. Also, considering that 9 out of 10 regions of Armenia border its neighbors, 5 of which share a border with Azerbaijan, with whom Armenia is currently in conflict, it becomes clear that the problem is not to be disregarded. At the same time, research shows that Armenia is leading in the world with its abortion numbers. Research shows that a vast number of abortions in Armenia are due to male preference. From 2019 through 2021, there were 108 000 births registered in Armenia as opposed to the 33 000 abortions, only 20% of which were prescribed by a doctor. The sex-selective abortion numbers put Armenia in the same rank as India, Vietnam, and China. In 2016, the Armenian government introduced a new law to hinder sex-selective abortion. According to the law, termination of pregnancy is allowed before week 12, given that they submit a written application. After week 12, termination of pregnancy is only allowed in case of medical problems or social factors. However, it is worth mentioning that the law does not specify what “social factors” means.
+Thus, it is essential to analyze the demographics of Armenia's demographics and explore the country's situation with regard to abortion numbers and the reasons for each region.
+
+
+
+## Research methodology
+
+The data has been taken from the Armenian National Institute of Health and  armstat.com (Statistical Committee of the Republic of Armenia). Data cleaning was done to extract the relevant pieces of information and put them into an appropriate format using the tidyr and dplyr packages of R. (Please, find attached the file “get_the_data.Rmd” with the codes for data cleaning) All the visualizations have also been created using R’s ggplot2 package.
+
+
+## Literature Review
+
+The research conducted by UNFPA on “Men and Gender Equality in Armenia” in 2016 surveyed 767 men and 860 women in Yerevan and all regions of Armenia to understand what are the accepted views about the roles of men and women. The survey consisted of more than 30 statements, such as “Women are too emotional to be leaders of their community”, “A woman with the same qualification can do as good a job as a man,” and similar. Some more questions were asked that would demonstrate the frequent job positions for males and females, their education, and their salaries. Furthermore, it asked questions demonstrating the equality and freedom of males and females in a family. As a result, it was concluded that in Armenia, there exists the concept of a “real man”, which is usually defined as someone who is success-oriented, skilled, and demonstrates leadership abilities. Both males and females agree that each gender has different responsibilities. At the same time, 78.9% of females and 86.2% of males justify rape against women, considering it to be the woman’s fault, and agree that the woman’s reputation after the incident should be questioned.
+Such results support the hypothesis that there is a tendency for son preference in Armenia. We want to use data and visualization techniques to check if it is true and to see whether it impacts the demographics of Armenia.
+
+
+## Data
+
+For the analysis, we have used several datasets. The first one consists of the number of abortions done by choice, by doctor's appointment, and for other reasons, as well as the number of total population for each region in 2020. The second one provides the number of males and females grouped by age groups for Yerevan and the regions of Armenia for the years 2012 - 2022. The third dataset contains the number of abortions done before and after the 12th week of pregnancy for Yerevan and all regions of Armenia in 2020. The fourth dataset is for the number of births and abortions in Armenia in the years 2000-2020. Finally, the fifth dataset shows the population and the abortion rate for a number of countries.
+
+
+\newpage
+
+## Hypothesis
+
+Initially, we held the belief that
+
+* The population of males is greater than the population of females in Armenia regardless of the age group.
+
+* The proportion of abortions done by choice over those done by doctor’s appointment varies depending in the region.
+
+* The 2016 law banning sex-selective abortion had a positive impact.
+
+
+## Analysis
+
+
+```{r,fig.width=10, fig.height=6, fig.cap='Birth and Abortion Rate in Armenia in 2020'}
+
+abortion <- read.csv("per_year_birth_abortion.csv")
+birth_abortion = na.omit(abortion)
+
+p1 <- ggplot(birth_abortion, aes(x = year, y = birth)) + 
+  geom_col(position = "dodge") + ylim(0, 50000) + 
+  scale_x_continuous(breaks = seq(2000, 2020, 1)) +
+  labs(x = '', y = "Births", title = "Births per year") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust =0.5, size = 16),
+        axis.text.x = element_text(angle = 90))
+
+
+p2 <- ggplot(birth_abortion,  aes(x = year, y = abortion)) + 
+  geom_col( position = 'dodge') +
+  ylim(0, 50000) + 
+  scale_x_continuous(breaks = seq(2000, 2020, 1)) +
+  labs(x = '', y = "Abortions", title = "Abortions per year") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust =0.5, size = 16),
+        axis.text.x = element_text(angle = 90))
+
+ggarrange(p1, p2, align = 'v')
+
+
+```
+
+Figure 1 illustrates the distribution of births and abortions in Armenia starting from 2000 to 2020. In the first plot, we can see an increase in the number of births from 2001 to 2010. Also, starting from 2011, there has been a general downfall trend. Looking at the distribution of abortions, we can observe that the abortion numbers are correlated with the birth numbers. However, the fluctuation is not as sharp.
+ Furthermore, looking at the years 2017-2020, we can see that the abortion numbers are remaining the same or even increasing, despite the fact that the birth numbers are falling. Consequently, at this very point in time, the ratio of births over abortions is lower than usual.
+
+
+\newpage 
+
+```{r, fig.width=10, fig.height=6, fig.cap='Population distribution of all age groups depending on gender '}
+
+pop = read.csv("final.csv")
+pop%>%
+  filter(region != "Yerevan")%>%
+  group_by(Age, gender)%>%
+  ggplot(aes(x = Age, y = population, fill = gender)) +
+  geom_boxplot()+
+  scale_x_discrete(limits = c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29",
+                              "30-34", "35-39", "40-44", "45-49", "50-54", 
+                              "55-59", "60-64", "65-69", "70-74", "75-79", "80+") 
+)
+
+
+```
+
+Figure 2 depicts the boxplots of male and female populations of the years 2012-2022 for the given age groups. We can see that before the age group of 20-24, the male population is greater in Armenia, while for the age groups older than 24, the female population is greater. Seeing that there are more males in the age group of 0-4, we can conclude that that is sex-selective abortion, as otherwise, the boxplots of the two genders would be similar. We assume the reason why the male population decreases with the increase in an age group may be the army, emigration based on a reluctance to serve in the army, or emigration for better job and study opportunities. In addition to that, female life expectancy is greater, which was also supported by our data. Thus, we reject the hypothesis that the population of males is greater than the population of females in Armenia, regardless of the age group.
+
+
+\newpage
+
+
+```{r, fig.cap='The amount of total and by choice abortions in each marz'}
+arm <- st_read('Armenia_Marzes', quiet = T)
+my_df <- read.csv('Abort_reasons_2020_Copy.csv')
+arm_new <- arm %>%
+  left_join(my_df[, c('region', 'by_doctor', 'choice', 'other_reason', 
+                      'total',"ratio_total", "ratio_choice",  "Group")], 
+            by = c('Name_Eng' = 'region'))
+
+
+ratio_choice <-ggplot(data = arm_new, aes(fill = ratio_choice)) + geom_sf() + 
+  labs(title = "Ratio of by Choice Abortion and Population", fill = '') + 
+  theme_light() +
+  theme(
+    axis.text.x=element_blank(),
+    axis.ticks.x=element_blank(),
+    axis.text.y=element_blank(),
+    axis.ticks.y=element_blank(),
+    plot.title = element_text(size=11))+
+  scale_fill_viridis_c()
+
+
+ratio_total <-ggplot(data = arm_new, aes(fill = ratio_total)) + geom_sf() + 
+  labs(title = "Ratio of Total Abortion and Population", fill = '') + theme_light() +
+  theme(
+    axis.text.x=element_blank(),
+    axis.ticks.x=element_blank(),
+    axis.text.y=element_blank(),
+    axis.ticks.y=element_blank(),
+    plot.title = element_text(size=11))+
+  scale_fill_viridis_c()
+
+
+
+ggarrange(ratio_total,ratio_choice, align = 'v')
+
+```
+
+Figure 3 comprises two maps of Armenia - one depicts the total abortion number of the given region divided by the region population, and the other illustrates the ratio of abortions done by choice over the region population. The 2020 data has been used to create both maps. We can conclude that Yerevan takes the lead in the number of total abortions, followed by Lori. In comparison, Vayots Dzor and Armavir have the least number of total abortions. Looking at the second map, we can see that the situation changes mostly for Syunik, which takes the lead with its highest number of abortions done by choice, and Yerevan, which number is getting less. We assume that some of the possible reasons may be the citizens of Yerevan leading an unhealthy lifestyle. It is harder to suggest a reason for the great number of abortions done by choice in Syunik. Consequently, we can say that we fail to reject our hypothesis that the proportion of abortions done by choice over those done by doctor’s appointment varies depending on the region.
+
+
+\newpage
+
+```{r, fig.width=12, fig.height=6, fig.cap ="Abortion ratio done by choice vs by doctor's prescription"}
+
+reasons <- read.csv("Abort_reasons_2020_Copy.csv")
+
+ggplot(reasons, aes(x = ratio_choice, y = ratio_doctor)) + 
+  geom_text(aes(label = region))+
+  labs(x = "By choice", y = "By doctor's prescription") + theme_light() + 
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16)
+  ) + geom_abline(slope = 1, intercept = 0, color = "red")+
+  ylim(0, 0.002)+ xlim(0, 0.003)
+
+```
+
+Figure 4 depicts the scatterplot of abortions done by doctor’s prescription versus those done by choice. All numbers are divided by the population of the region. Looking at the plot, it can be concluded that in Armenia, more abortions are done by choice rather than by doctor’s prescription, regardless of the region.
+
+\newpage
+
+
+```{r, fig.width=8, fig.height=6, fig.cap = "Abortion ratio before week 12 and between weeks 12-24"}
+
+gender_abortion <- read.csv("before_week_12_2020.csv")
+
+ggplot(gender_abortion, aes(x =ratio_after, y = ratio_before)) + 
+    geom_text(aes(label = region))+
+    labs(x = "Week 12-24", y = "Before Week 12") + theme_light() + theme(
+           plot.title = element_text(hjust = 0.5, size = 16)
+         ) + geom_abline(slope = 1, intercept = 0, color = "red")+
+  ylim(0, 0.006)+ xlim(0, 0.003)
+
+
+
+```
+
+
+Figure 5 represents the scatterplot where the axis are the number of abortions done before week 12 as opposed to those done in weeks 12-24. It can be concluded that most of the abortions in Armenia are done before knowing the gender of the fetus.
+Combining the findings from both scatterplots and the results from the previous plots, it can be deduced that there is sex-selective abortion in Armenia. In contrast, most abortions done by choice are not done based on the gender of the fetus.
+
+\newpage
+
+```{r,fig.width=10, fig.height=6, fig.cap='Population of 0-4 age group by gender'}
+
+pop <- read.csv("final.csv")
+
+pop%>%
+  filter(Age == "0-4")%>%
+  ggplot(aes(x = Year, y = population, fill = gender)) +
+  geom_col(position = "dodge") + facet_wrap(~region, scales = "free", ncol = 3)+
+  scale_x_continuous(breaks = c(2012, 2014, 2016, 2018, 2020, 2022))
+  
+  
+```
+
+Figure 6 demonstrates the male and female population in the year range 2012-2022 for Yerevan and each region. The graph can be used to check whether the 2016 law banning sex-selective abortion had a significant impact. We can notice that even though the gap between the male and female population decreased during the period of 2012-2022, the trend can already be seen before 2016. Thus, we assume the change in the demographics was not caused by the law. As a result, the hypothesis that the 2016 law banning sex-selective abortion had a positive impact is rejected.
+
+
+
+\newpage
+
+## Conclusion
+
+Summing up the findings of our research, we can conclude the following. First of all, there is sex-selective abortion in Armenia, which results in a greater population of males before the age group of 20-24. However, we have quite the opposite situation after the mentioned age group. Thus, there is a big disbalance between male and female populations with regard to age.
+
+Secondly, most abortions in Armenia are done by choice, which is true for all regions. However, most abortions are done before knowing the gender of the fetus.
+
+Lastly, the 2016 law probably did not have an impact on the demographics of the country. According to our assumption, the ambiguity of the words “social factors” is the reason for that. However, we believe that a more powerful tool to reduce the general trend of male preference would be to educate society.
+
+
+
+## Sources
+
+Osipov, V.,  Sargizova, J., (2016). REPORT ON FINDINGS OF THE SOCIOLOGICAL SURVEY MEN AND GENDER EQUALITY IN ARMENIA. United Nations Population Fund. retrieved on December 11, 2022 from https://menengage.unfpa.org/sites/default/files/resource-pdf/MEN-AND-GENDER-EQUALITY_Final.pdf
+
+
+ARTIFICIAL TERMINATION OF PREGNANCY,  N 180-N, HHPT 2017.03.09 / 15 (1290). Article .224. (2017). Retrieved on December 11, 2022 from 
+https://abortion-policies.srhr.org/documents/countries/08-Armenia-Government-Decision-on-the-Procedure-and-Conditions-of-Abortion-2017.pdf
+
+
+Statistical Committee of the Republic of Armenia, Retrieved on December 11, 2022 from 
+https://armstat.am/en/?nid=209
+
+
+
+
+
+
+
+
+
+
+
+
