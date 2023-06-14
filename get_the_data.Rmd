@@ -1,0 +1,98 @@
+---
+title: "Abortion"
+author: "Astghik Kostanyan"
+date: '2022-11-22'
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message = F, warning = F}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(readr)
+
+
+```
+
+```{r}
+x <-  data.frame()
+name_list = c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+" )
+regions_names <- c("Armavir", "Ararat", "Aragatsotn", "Kotayk", "Gegharkunik", "Tavush", "Lori", "Shirak", "Vayots Dzor", "Syunik", "Yerevan")
+i = 1
+
+new_dataframe_2012 <- function(data){
+  data$Age <- as.numeric(data$Age)
+  index = seq(from = 1, to = nrow(data), by = 5)
+  counter = 1
+ 
+  for (i in index){
+    a <- data[c(i:(i+4)),]
+    a[name_list[counter], ] <- colSums(a)
+    last_row = tail(a, n =1)
+    x <- rbind(x,last_row)
+    counter = counter + 1
+    print(a)
+  }
+  x[17, ] <- data[81, ]
+  x$Age <-name_list
+  return(x)
+}
+
+get_final_df <- function(df_male, df_female){
+  
+  male_2012 <- new_dataframe_2012(read.csv(df_male))
+  female_2012 <- new_dataframe_2012(read.csv(df_female))
+  
+  marz = gather(male_2012, "Year" , "male", -Age )
+  female = gather(female_2012, "Year" , "female", -Age )
+  
+  marz$female_value = female$female_value
+  marz$region = regions_names[i]
+  return(marz)
+  
+}
+
+
+armavir_2012 <- get_final_df("2012_2022_Armavir_Male.csv", "2012_2022_Armavir_Female.csv")
+i = i + 1
+
+ararat_2012 <- get_final_df("2012_2022_Ararat_Male.csv", "2012_2022_Ararat_Female.csv")
+i = i + 1
+
+aragatsotn_2012 <- get_final_df("2012_2022_Aragatsotn_Male.csv", "2012_2022_Aragatsots_Female.csv")
+i = i + 1
+
+kotayk_2012 <- get_final_df("2012_2022_Kotayk_Male.csv", "2012_2022_Kotayk_Female.csv")
+i = i + 1
+
+gegharkunik_2012 <- get_final_df("2012_2022_Gegharkunik_Male.csv", "2012_2022_Gegharkunik_Female.csv")
+i = i + 1
+
+tavush_2012 <- get_final_df("2012_2022_Tavush_Male.csv", "2012_2022_Tavush_Female.csv")
+i = i + 1
+
+lori_2012 <- get_final_df("2012_2022_Lori_Male.csv", "2012_2022_Lori_Female.csv")
+i = i + 1
+
+shirak_2012 <- get_final_df("2012_2022_Shirak_Male.csv", "2012_2022_Shirak_Female.csv")
+i = i + 1
+
+vayotsdzor_2012 <- get_final_df("2012_2022_VayotsDzor_Male.csv", "2012_2022_VayotsDzor_Female.csv")
+i = i + 1
+
+syunik_2012 <- get_final_df("2012_2022_Syunik_Male.csv", "2012_2022_Syunik_Female.csv")
+i = i + 1
+
+yerevan_2012 <- get_final_df("2012_2022_Yerevan_Male.csv", "2012_2022_Yerevan_Female.csv")
+
+
+final <- rbind( armavir_2012, ararat_2012, aragatsotn_2012, kotayk_2012, gegharkunik_2012, tavush_2012,  lori_2012, shirak_2012, vayotsdzor_2012, syunik_2012, yerevan_2012)
+
+final$Year<-gsub("X","",as.character(final$Year))
+gathered <- gather(final, key = "gender", value = "population", 3:4)
+
+write_csv(gathered, "C:\\Users\\Admin\\Desktop\\Data Viz\\Project\\final.csv")
+
+```
+
